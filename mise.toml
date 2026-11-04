@@ -1,0 +1,8 @@
+[tasks.build-debug]
+run = "cargo build"
+
+[tasks.build-release]
+run = "cargo build --release"
+
+[tasks.qa]
+run = "cargo test"
