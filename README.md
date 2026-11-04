@@ -22,6 +22,7 @@ CREATE TABLE events (
 # Mount to the _db folder
 $ mkdir _db
 $ fsqlite examples/sample.sqlite _db --pretty-json
+Mounted examples/sample.sqlite to _db. Press Ctrl+C to exit and unmount
 ```
 
 In another window:
