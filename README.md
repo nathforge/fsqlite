@@ -4,8 +4,8 @@ Mount sqlite DB as a read-only filesystem.
 
 Rows are folders, columns are files. JSON data optionally prettified.
 
- * [Demo](#demo)
- * [Install](#install)
+- [Demo](#demo)
+- [Install](#install)
 
 ## Demo <a name="demo"></a>
 
@@ -30,8 +30,27 @@ $ jq '.items[0]' _db/events/3/payload
 
 ## Install <a name="install"></a>
 
-Install a [FUSE implementaion](https://en.wikipedia.org/wiki/Filesystem_in_Userspace):
- * macOS - [macFUSE](https://macfuse.github.io/)
- * Linux - fuse3 should be available in your package manager
+### Prerequisites
 
-TODO (build, homebrew?)
+Install a [FUSE implementation](https://en.wikipedia.org/wiki/Filesystem_in_Userspace):
+
+- macOS - [macFUSE](https://macfuse.github.io/)
+- Linux - fuse3 should be available in your package manager
+
+### Installation options
+
+Homebrew:
+
+```shell
+brew tap nathforge/tap
+brew trust nathforge/tap
+brew install fsqlite
+```
+
+Mise:
+
+```shell
+MISE_MINIMUM_RELEASE_AGE=0s mise use github:nathforge/fsqlite
+```
+
+Or download & install a [release](https://github.com/nathforge/fsqlite/releases).
