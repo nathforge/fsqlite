@@ -20,6 +20,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
+      - name: Install macFUSE (libfuse for linking)
+        run: brew install --cask macfuse
       - name: Build
         run: bash scripts/build.sh
       - name: Package
