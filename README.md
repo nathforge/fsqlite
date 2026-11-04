@@ -5,7 +5,7 @@ Mount sqlite DB as a read-only filesystem.
 Rows are folders, columns are files. JSON data optionally prettified.
 
 > [!NOTE]
-> I built this because I was tired of flipping between my IDE and a database editor. With the DB mounted as a folder, the file tree, search and previews work on the data too.
+> I wanted this because I was tired of flipping between my IDE and a database editor. With the DB mounted as a folder, the file tree, search and previews work on the data too.
 
 ---
 
