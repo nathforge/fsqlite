@@ -391,7 +391,7 @@ fn main() {
     }
     let [db_path, mount] = <[_; 2]>::try_from(positional).unwrap_or_else(|_| usage());
     let db = Connection::open_with_flags(
-        PathBuf::from(db_path),
+        PathBuf::from(&db_path),
         SqlFlags::SQLITE_OPEN_READ_ONLY | SqlFlags::SQLITE_OPEN_NO_MUTEX,
     )
     .expect("failed to open database");
@@ -421,5 +421,11 @@ fn main() {
     })
     .expect("failed to install signal handler");
 
+    eprintln!(
+        "Mounted {} to {}. Press Ctrl+C to exit and unmount",
+        PathBuf::from(&db_path).display(),
+        PathBuf::from(&mount).display(),
+    );
     session.run().expect("filesystem error");
+    eprintln!("Unmounted {}", PathBuf::from(&mount).display());
 }
