@@ -28,16 +28,28 @@ Mounted examples/sample.sqlite to _db. Press Ctrl+C to exit and unmount
 In another window:
 
 ```shell
-$ ls _db/events/3
-at	id	payload	type
+# What does a row directory contain?
+$ find _db/posts/1
+_db/posts/1
+_db/posts/1/id
+_db/posts/1/author_id
+_db/posts/1/title
+_db/posts/1/body
+_db/posts/1/tags
+_db/posts/1/created_at
 
-$ jq '.items[0]' _db/events/3/payload
-{
-  "sku": "A-100",
-  "qty": 2,
-  "price": 9.99
-}
+# Search posts
+$ rg 'First post!' _db/posts --glob body
+_db/posts/1/body
+
+# Extract data from a JSON column
+$ jq -r '.user_id' _db/events/*/payload
+1
+2
+3
 ```
+
+Mounted two databases? You could use `diff -r` to show the differences.
 
 ## Install <a name="install"></a>
 
