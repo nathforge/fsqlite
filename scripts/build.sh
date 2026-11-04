@@ -4,6 +4,9 @@ set -euo pipefail
 case "$(uname -s)" in
   Darwin)
     rustup target add aarch64-apple-darwin x86_64-apple-darwin
+    # fuser links macFUSE's libfuse via pkg-config; the library is universal,
+    # so allow pkg-config to be used for the cross-compiled target.
+    export PKG_CONFIG_ALLOW_CROSS=1
     cargo build --release --target aarch64-apple-darwin
     cargo build --release --target x86_64-apple-darwin
     ;;
