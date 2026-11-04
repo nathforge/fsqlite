@@ -10,6 +10,16 @@ Rows are folders, columns are files. JSON data optionally prettified.
 ## Demo <a name="demo"></a>
 
 ```shell
+# Show the pre-existing "events" table schema
+$ sqlite3 examples/sample.sqlite ".schema events"
+CREATE TABLE events (
+  id       INTEGER PRIMARY KEY,
+  type     TEXT NOT NULL,
+  payload  TEXT NOT NULL CHECK (json_valid(payload)),
+  at       TEXT NOT NULL
+);
+
+# Mount to the _db folder
 $ mkdir _db
 $ fsqlite examples/sample.sqlite _db --pretty-json
 ```
