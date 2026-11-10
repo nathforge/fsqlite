@@ -355,15 +355,18 @@ fn parse_size(s: &str) -> Option<usize> {
     num.parse::<usize>().ok()?.checked_mul(mult)
 }
 
+const USAGE: &str = "usage: fsqlite [--pretty-json[=true|false]] [--pretty-json-max-size=<size>] \
+<database.sqlite> <mountpoint>
+
+options:
+  -h, --help               print this help and exit
+  -V, --version            print version and exit
+  --pretty-json            indent JSON objects/arrays found in text cells (default: off)
+  --pretty-json-max-size   largest cell to prettify, in bytes; K/M/G suffixes allowed
+                           (default: 1M). Larger cells are shown as stored.";
+
 fn usage() -> ! {
-    eprintln!(
-        "usage: fsqlite [--pretty-json[=true|false]] [--pretty-json-max-size=<size>] \
-         <database.sqlite> <mountpoint>\n\
-         \n\
-         --pretty-json            indent JSON objects/arrays found in text cells (default: off)\n\
-         --pretty-json-max-size   largest cell to prettify, in bytes; K/M/G suffixes allowed\n\
-         \x20                        (default: 1M). Larger cells are shown as stored."
-    );
+    eprintln!("{USAGE}");
     std::process::exit(2);
 }
 
@@ -373,6 +376,14 @@ fn main() {
     let mut positional = Vec::new();
     for arg in std::env::args_os().skip(1) {
         match arg.to_str() {
+            Some("-h" | "--help") => {
+                println!("{USAGE}");
+                std::process::exit(0);
+            }
+            Some("-V" | "--version") => {
+                println!("fsqlite {}", env!("CARGO_PKG_VERSION"));
+                std::process::exit(0);
+            }
             Some("--pretty-json" | "--pretty-json=true") => pretty_json = true,
             Some("--pretty-json=false") => pretty_json = false,
             Some(a) if a.starts_with("--pretty-json-max-size=") => {
