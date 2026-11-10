@@ -408,13 +408,41 @@ fn main() {
 
     let mut cfg = Config::default();
     cfg.mount_options.extend([MountOption::RO, MountOption::FSName("fsqlite".into())]);
+    #[cfg(target_os = "macos")]
+    let mount_cpath = std::ffi::CString::new(
+        std::fs::canonicalize(&mount).expect("mountpoint").into_os_string().into_encoded_bytes(),
+    )
+    .unwrap();
+    #[cfg(target_os = "macos")]
+    let session = {
+        // macFUSE >= 5.3.3 defers the mount, which breaks the fd-only
+        // `fuse_mount_compat25` that fuser uses. Mount via `fuse_mount` instead.
+        let fd = macfuse::mount(&mount, &["ro", "fsname=fsqlite"]).expect("mount failed");
+        let acl = cfg.acl;
+        fuser::Session::from_fd(fs, fd, acl, cfg).expect("mount failed")
+    };
+    #[cfg(not(target_os = "macos"))]
     let mut session = fuser::Session::new(fs, &mount, &cfg).expect("mount failed");
 
     // Unmount on Ctrl+C / SIGTERM / SIGHUP. Without this the process dies and
     // leaves a dead mount behind ("Device not configured").
-    let mut unmounter = session.unmount_callable();
+    #[cfg(target_os = "macos")]
+    let unmount = {
+        move || {
+            if unsafe { libc::unmount(mount_cpath.as_ptr(), 0) } != 0 {
+                Err(std::io::Error::last_os_error())
+            } else {
+                Ok(())
+            }
+        }
+    };
+    #[cfg(not(target_os = "macos"))]
+    let unmount = {
+        let mut unmounter = session.unmount_callable();
+        move || unmounter.unmount()
+    };
     ctrlc::set_handler(move || {
-        if let Err(e) = unmounter.unmount() {
+        if let Err(e) = unmount() {
             eprintln!("fsqlite: unmount failed: {e} (is something using the mount?)");
             std::process::exit(1);
         }
@@ -428,4 +456,44 @@ fn main() {
     );
     session.run().expect("filesystem error");
     eprintln!("Unmounted {}", PathBuf::from(&mount).display());
+}
+
+#[cfg(target_os = "macos")]
+mod macfuse {
+    use std::ffi::{c_char, c_int, c_void, CString};
+    use std::os::fd::{FromRawFd, OwnedFd};
+    use std::os::unix::ffi::OsStrExt;
+
+    #[repr(C)]
+    struct FuseArgs {
+        argc: c_int,
+        argv: *const *const c_char,
+        allocated: c_int,
+    }
+
+    unsafe extern "C" {
+        fn fuse_mount(mountpoint: *const c_char, args: *const FuseArgs) -> *mut c_void;
+        fn fuse_chan_fd(ch: *mut c_void) -> c_int;
+    }
+
+    /// Mount via libfuse's channel API and return a dup of the device fd.
+    pub fn mount(mountpoint: &std::ffi::OsStr, options: &[&str]) -> std::io::Result<OwnedFd> {
+        let mp = CString::new(mountpoint.as_bytes()).unwrap();
+        let mut owned = vec![CString::new("fsqlite").unwrap()];
+        for o in options {
+            owned.push(CString::new("-o").unwrap());
+            owned.push(CString::new(*o).unwrap());
+        }
+        let argv: Vec<*const c_char> = owned.iter().map(|s| s.as_ptr()).collect();
+        let args = FuseArgs { argc: argv.len() as c_int, argv: argv.as_ptr(), allocated: 0 };
+        let ch = unsafe { fuse_mount(mp.as_ptr(), &args) };
+        if ch.is_null() {
+            return Err(std::io::Error::other("fuse_mount failed"));
+        }
+        let fd = unsafe { libc::dup(fuse_chan_fd(ch)) };
+        if fd < 0 {
+            return Err(std::io::Error::last_os_error());
+        }
+        Ok(unsafe { OwnedFd::from_raw_fd(fd) })
+    }
 }
