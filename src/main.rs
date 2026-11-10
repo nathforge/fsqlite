@@ -448,7 +448,7 @@ fn main() {
         }
     };
     #[cfg(not(target_os = "macos"))]
-    let unmount = {
+    let mut unmount = {
         let mut unmounter = session.unmount_callable();
         move || unmounter.unmount()
     };
